@@ -1,4 +1,6 @@
 # .gitignore
 *.DS_Store
 .env
+/lyrics/
+.cache
 
