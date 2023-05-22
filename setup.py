@@ -35,6 +35,7 @@ load_dotenv()
 
 from concurrent.futures import ThreadPoolExecutor
 
+import pandas as pd
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')

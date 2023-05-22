@@ -1,5 +1,8 @@
 from setup import *
 from genius_handler import *   
+from database_handler import *
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 
 #Spotify Handling, where we get the 100 sorted, random songs with lyrics:
@@ -49,55 +52,37 @@ def get_instrumentalness(audio_features):
         return None
 
 
-def build_track_list(songNumber, query_offset):
-    trackList = []
-    pbar = tqdm(total=songNumber)  # progress bar init
-
-    while len(trackList) <= songNumber:
-        try:
-            trackName, trackArtist, audio_features = spotify_query(query_offset)  # get the song name, artist, and audio features from a randomized spotify search
-
-            instrumentalness = get_instrumentalness(audio_features)
-            if instrumentalness is None or instrumentalness > 0.5:
-                sleep(0.1)
-                pbar.update(1)
-                song_name_array = [trackName, trackArtist]
-                lyrics = lyric_saving(song_name_array) #get the lyrics from genius, if they exist
-                trackList.append(lyrics)
-            else:
-                continue
-        except Exception as e:
-            print(f"Error: {e}")
-            continue
-
-    return trackList
-
 def fetch_track_data(query_offset):
     try:
         trackName, trackArtist, audio_features = spotify_query(query_offset)  # get the song name, artist, and audio features from a randomized spotify search
 
         instrumentalness = get_instrumentalness(audio_features)
-        if instrumentalness is None or instrumentalness > 0.5:
+        if instrumentalness is not None or instrumentalness > 0.5:
             song_name_array = [trackName, trackArtist]
             lyrics = lyric_saving(song_name_array) #get the lyrics from genius, if they exist
-            return lyrics
+            return lyrics, trackName, trackArtist
         else:
             return None
     except Exception as e:
         print(f"Error: {e}")
         return None
 
-def build_track_list(songNumber, query_offset):
+def build_track_list(songNumber, query_offset,max_workers):
     trackList = []
     pbar = tqdm(total=songNumber)  # progress bar init
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        future_to_lyrics = {executor.submit(fetch_track_data, offset): offset for offset in range(query_offset, query_offset + songNumber)}
-        for future in concurrent.futures.as_completed(future_to_lyrics):
-            lyrics = future.result()
-            if lyrics is not None:
-                trackList.append(lyrics)
-                pbar.update(1)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor: #this is the multithreading part, it's a lot faster than doing it sequentially
+        while len(trackList) < songNumber:
+            future_to_lyrics = {executor.submit(fetch_track_data, offset): offset for offset in range(query_offset, query_offset + songNumber)}
+            for future in as_completed(future_to_lyrics):
+                result = future.result()
+                if result[0] is not None: #if the lyrics exist, add them to the database
+                    lyrics, trackName, trackArtist = future.result()
+                    df = add_to_db(lyrics, trackName, trackArtist)
+                    pbar.update(1)
+                    trackList.append([1])
+                    print(trackArtist, trackName)
 
-    return trackList
+    return df
+
 
