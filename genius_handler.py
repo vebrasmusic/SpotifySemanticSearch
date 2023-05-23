@@ -23,13 +23,13 @@ def get_song_lyrics(title, artist, max_retries=5, delay_between_retries=10):
                 return None
         except Timeout:
             if attempt < max_retries - 1:  # it's not the last attempt
-                print(f"Timeout occurred when getting lyrics for {title} by {artist}. "
-                      f"Waiting {delay_between_retries} seconds before retrying...")
+                #print(f"Timeout occurred when getting lyrics for {title} by {artist}. "
+                      #f"Waiting {delay_between_retries} seconds before retrying...")
                 time.sleep(delay_between_retries)
                 continue
             else:  # it's the last attempt
-                print(f"Still experiencing timeouts after {max_retries} attempts. "
-                      f"Giving up on getting lyrics for {title} by {artist}.")
+                #print(f"Still experiencing timeouts after {max_retries} attempts. "
+                      #f"Giving up on getting lyrics for {title} by {artist}.")
                 return None
         except Exception as e:
             #print(f"An error occurred: {e}")
