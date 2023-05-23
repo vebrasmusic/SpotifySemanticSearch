@@ -19,7 +19,7 @@ def get_song_lyrics(title, artist, max_retries=5, delay_between_retries=10):
             if song is not None:
                 return song
             else:
-                print(f"No lyrics found for {title} by {artist}.")
+                #print(f"No lyrics found for {title} by {artist}.")
                 return None
         except Timeout:
             if attempt < max_retries - 1:  # it's not the last attempt
@@ -32,7 +32,7 @@ def get_song_lyrics(title, artist, max_retries=5, delay_between_retries=10):
                       f"Giving up on getting lyrics for {title} by {artist}.")
                 return None
         except Exception as e:
-            print(f"An error occurred: {e}")
+            #print(f"An error occurred: {e}")
             return None
         
 

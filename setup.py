@@ -36,6 +36,11 @@ load_dotenv()
 from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
+import sqlite3
+
+from spotipy.exceptions import SpotifyException
+import logging
+
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
