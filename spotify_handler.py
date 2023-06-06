@@ -45,9 +45,11 @@ def spotify_query(query_offset):
         audio_features = sp.audio_features(trackURI)
         return trackName, trackArtist, audio_features
     except spotipy.SpotifyException as e:
-            if e.http_status == 400:
-                # Silently ignore "Bad request" errors
-                return None, None, None
+            if e.http_status == 429:
+                # If we're being rate limited, wait for a bit before retrying
+                print("Rate limited. Waiting...")
+                time.sleep(20)  # Wait for 20 seconds
+                return spotify_query(query_offset)
             else:
                 # For any other error, re-raise the exception
                 raise e
@@ -92,7 +94,7 @@ def fetch_track_data(query_offset):
         else:
             return None
     except Exception as e:
-        #print(f"Error: {e}")
+        print(f"Error: {e}")
         return None
 
 def build_track_list(songNumber, query_offset, max_workers):
@@ -101,7 +103,7 @@ def build_track_list(songNumber, query_offset, max_workers):
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor: #this is the multithreading part, it's a lot faster than doing it sequentially
         while trackNumber < songNumber:
-            future_to_lyrics = {executor.submit(fetch_track_data, query_offset): offset for offset in range(songNumber)}
+            future_to_lyrics = {executor.submit(fetch_track_data, query_offset): offset for offset in range(max_workers)}
             for future in as_completed(future_to_lyrics):
                 if trackNumber >= songNumber:
                     break
@@ -112,8 +114,7 @@ def build_track_list(songNumber, query_offset, max_workers):
                     with pbar.external_write_mode():
                         pbar.update(1)
                     trackNumber += 1
-                    #print(trackNumber)
-                    #print(trackArtist, trackName)
+                    print(trackNumber)
 
     add_to_sql(df, conn) #add the songs to the database
 
